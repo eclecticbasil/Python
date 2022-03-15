@@ -1,73 +1,239 @@
 #------------------------------------------#
 # Title: CDInventory.py
-# Desc: Starter Script for Assignment 05
+# Desc: Working with classes and functions.
 # Change Log: (Who, When, What)
 # DBiesinger, 2030-Jan-01, Created File
-# Rbukhari, 2022-Feb-23, Changing to add 
-# script for variables, displaying data,
-# creating a 2d list with a dictionaries and 
-# functionality to delete an entry. 
+# Rbukhari, 2022-Mar-03, Formatting to correct 
+# functions in proper order delete item function, 
+# add item function, added docstrings, 
+# added code to write file. 
+# Rbukhari, 2022-Mar-12, Changed to add structured error handling
+# where there is user interaction. 
+# Type casting (string to int) or file access operations. 
+# Deleted unnecessary code and changed some docstrings, 
+# and Modified the permanent data store to use binary data.
 #------------------------------------------#
-# Declare variables
 
+import pickle
+
+# -- DATA -- #
 strChoice = '' # User input
 lstTbl = []  # list of lists to hold data
-# Replacing the list of lists with list of dicts
-dicRow = {} # list of data row
-strFileName = "CDInventory.txt"  # data storage file
-objFile = None  # file obj
+dicRow = {}  # list of data row
+strFileName = 'CDInventory.bin'  # data storage file
+objFile = None  # file object
 
-# Get user Input
-print('The Magic CD Inventory\n')
-while True:
-    # 1. Display menu allowing the user to choose:
-    print('[l] load Inventory from file\n[a] Add CD\n[i] Display Current Inventory')
-    print('[d] delete CD from Inventory\n[s] Save Inventory to file\n[x] exit')
-    strChoice = input("l, a, i, d, s or x: ").lower()  # convert choice to lower case at time of input
-    print()
 
-    if strChoice == "x":
-        # 5. Exit the program if the user chooses so
-        break
-    if strChoice == "l":
-        # Functionality of loading the existing data
-        lstTbl.clear()
-        objFile = open(strFileName, "r")
-        for row in objFile:
-            lstRow = row.strip().split(",")
-            dicRow = {"ID":lstRow[0], "Artist":lstRow[1],"CD":lstRow[2]}
-            lstTbl.append(dicRow)
-        objFile.close()
-        pass
-    elif strChoice == 'a':  # no elif necessary, as this code is only reached if strChoice is not 'exit'
-        # 2. Add data to the table (2d-list) each time the user wants to add data
-        dicRow = {}
-        dicRow["ID"] = int(input("Enter an ID: "))
-        dicRow["Artist"] = input ("Enter Name of Artist: ")
-        dicRow["CD"] = input ("Enter the CD Name:  ")
+# -- PROCESSING -- #
+class DataProcessor:
+    """Data processing."""
+    
+    def add_item(strID, strTitle, strArtist):
+        """Found Function for adding an item.
+
+        Args: ID number,Title and Artist namehv
+        Returns: None
+
+        """
+
+        intID = int(strID)
+        dicRow = {"ID": intID, "Title": strTitle, "Artist": strArtist}
         lstTbl.append(dicRow)
-    elif strChoice == 'i':
-        # 3. Display the current data to the user each time the user wants to display the data
-        print("ID, Artist, CD")
+
+    def delete_item(intIDDel):
+        """Found Function for deleting an entry.
+        
+        Args:ID number of the CD 
+        Returns:True if the CD was removed 
+        
+        """
+        intRowNr = -1
+        blnCDRemoved = False
         for row in lstTbl:
-            print(row)
-    elif strChoice == 'd':
-        # Functionality of deleting an entry
-        delID = int(input("Please enter the ID of the row you want to delete: "))
-        for dicRow in lstTbl:
-            if dicRow["ID"] == delID:
-                lstTbl.remove(dicRow)
-        pass
-    elif strChoice == 's':
-      # 4. Saving the data to a text file CDInventory.txt if the user chooses so
-      objFile = open(strFileName, 'w')
-      for row in lstTbl:
-          strRow = ""
-          for item in row.values():
-              strRow += str(item) + ","
-          
-          strRow = strRow [:-1] + "\n"
-          objFile.write(strRow)
-      objFile.close()
+            intRowNr += 1
+            if row["ID"] == intIDDel:
+                del lstTbl[intRowNr]
+                blnCDRemoved = True
+                return blnCDRemoved
+class FileProcessor:
+    """Processing the data to and from text file."""
+
+    @staticmethod
+    def read_file(file_name):
+        """Found Function to manage data ingestion from file to a list of dicts.
+        
+        Reads the data from file identified by file_name into a 
+        2D table (list of dicts) table one line in the file represents one 
+        dictionary row in table.
+        Args: file_name (string): name of file used to read the data from
+        table (list of dict): 2D data structure (list of dicts).
+    
+        Returns:Table.
+
+        """
+        with open (file_name, "rb") as fileObj: #pickling read file 
+            table = pickle.load(fileObj)
+        
+        return table
+
+        
+    @staticmethod
+    def write_file(file_name, table):
+        """Write to File.
+
+        Args:Write data to binary file
+        Returns: None
+
+        """
+        with open (file_name, "wb") as fileObj:
+            pickle.dump(table, fileObj)
+
+# -- PRESENTATION (Input/Output) -- #
+
+class IO:
+    """Handling Input / Output."""
+
+    @staticmethod
+    def print_menu():
+        """Display menu to the user.
+
+        Args: None.
+        Returns: None.
+
+        """
+        print("Menu\n\n[l] load Inventory from file\n[a] Add CD\n[i] Display Current Inventory")
+        print("[d] delete CD from Inventory\n[s] Save Inventory to file\n[x] exit\n")
+
+    @staticmethod
+    def menu_choice():
+        """Get user input for menu selection.
+
+        Args: None
+
+        Returns: choice (string)lowercase string of the users input out of 
+        the choices l, a, i, d, s or x
+        
+        """
+        choice = " "
+        while choice not in ["l", "a", "i", "d", "s", "x"]:
+            choice = input("Which operation would you like to perform? [l, a, i, d, s or x]: ").lower().strip()
+        print()  # Add extra space for layout
+        return choice
+
+    @staticmethod
+    def show_inventory(table):
+        """Display current inventory table.
+        
+        Args:table (list of dict): 2D data structure (list of dicts) that holds
+        the data during runtime.
+        Returns: None.
+
+        """
+        print("======= The Current Inventory: =======")
+        print("ID\tCD Title (by: Artist)\n")
+        for row in table:
+            print("{}\t{} (by:{})".format(*row.values()))
+        print("======================================")
+
+    def add_userinput():
+        """Asking the user input.
+
+        Args: None
+        Return: None
+
+        """
+        # Using try/except
+        strID = ""
+        while True:
+            strID = input ("Enter a number for ID:, \"x\" to exit:")
+            if strID.lower() == "x":
+                return
+            try:
+                strID = int(strID)
+                break
+            except ValueError:
+                print("Please enter a number for ID.")
+
+        strTitle = input("What is the CD\'s title? ").strip()
+        strArtist = input("What is the Artist\'s name? ").strip()
+
+        return strID, strTitle, strArtist
+    
+# 1. When program starts, read in the currently saved Inventory
+lstTbl = FileProcessor.read_file(strFileName)
+
+# 2. start main loop
+while True:
+    # 2.1 Display Menu to user and get choice
+    IO.print_menu()
+    strChoice = IO.menu_choice()
+
+    # 3. Process menu selection
+    # 3.1 process exit first
+    if strChoice == "x":
+        break
+    # 3.2 process load inventory
+    if strChoice == "l":
+        print("WARNING: If you continue, all unsaved data will be lost and the Inventory will be re-loaded from file.")
+        strYesNo = input("Type \"yes\" to continue and reload from file. otherwise reload will be canceled")
+        if strYesNo.lower() == "yes":
+            print("reloading...")
+            lstTbl = FileProcessor.read_file(strFileName)
+            IO.show_inventory(lstTbl)
+        else:
+            input("canceling... Inventory data NOT reloaded. Press [ENTER] to continue to the menu.")
+            IO.show_inventory(lstTbl)
+        continue  # start loop back at top.
+    # 3.3 process add a CD
+    elif strChoice == "a":
+        # 3.3.1 Ask user for new ID, CD Title and Artist
+        try: 
+            strID, strTitle, strArtist = IO.add_userinput()
+        except TypeError:
+            continue
+        # 3.3.2 Add item to the table
+        DataProcessor.add_item(strID, strTitle, strArtist)
+        IO.show_inventory(lstTbl)
+        continue  # start loop back at top.
+    # 3.4 process display current inventory
+    elif strChoice == "i":
+        IO.show_inventory(lstTbl)
+        continue  # start loop back at top.
+    # 3.5 process delete a CD
+    elif strChoice == "d":
+        # 3.5.1 get Userinput for which CD to delete
+        # 3.5.1.1 display Inventory to user
+        IO.show_inventory(lstTbl)
+        # 3.5.1.2 ask user which ID to remove
+        for value in ("intIDDel"):
+            try:
+                intIDDel = int(input("Which ID would you like to delete? ").strip())
+                break 
+            except ValueError:
+                print("Please enter a number for ID, or \"x\" to exit")
+                continue
+
+        # 3.5.2 search thru table and delete CD
+        blnCDRemoved = DataProcessor.delete_item(intIDDel)
+        if blnCDRemoved:
+            print("The CD was removed")
+        else:
+            print("Could not find this CD!")
+        IO.show_inventory(lstTbl)
+        continue  # start loop back at top.
+    # 3.6 process save inventory to file
+    elif strChoice == "s":
+        # 3.6.1 Display current inventory and ask user for confirmation to save
+        IO.show_inventory(lstTbl)
+        strYesNo = input("Save this inventory to file? [y/n] ").strip().lower()
+        # 3.6.2 Process choice
+        if strYesNo == "y":
+            # 3.6.2.1 save data
+            FileProcessor.write_file( strFileName, lstTbl)
+        else:
+            input("The inventory was NOT saved to file. Press [ENTER] to return to the menu.")
+        continue  # start loop back at top.
+    # 3.7 catch-all should not be possible, as user choice gets vetted in IO, but to be save:
     else:
-        print('Please choose either l, a, i, d, s or x!')
+        print("General Error")
+
